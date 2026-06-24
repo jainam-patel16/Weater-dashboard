@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Sky &amp; Weather Dashboard</title>
+<link rel="icon" type="image/png" href="assets/logo-128.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="weatherFx"></canvas>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo-128.png" alt="Logo" class="brand-icon">
+      <h1>Global Sky &amp; Weather Dashboard</h1>
+    </div>
+
+    <div class="search-wrap">
+      <input id="searchInput" type="text" placeholder="Search any city, place, or address..." autocomplete="off">
+      <div id="searchResults" class="search-results"></div>
+      <button id="geoBtn" title="Use my current location">📍</button>
+    </div>
+
+    <div class="unit-toggle" id="unitToggle">
+      <button class="unit-btn active" data-unit="C">°C</button>
+      <button class="unit-btn" data-unit="F">°F</button>
+    </div>
+
+    <div class="clock-wrap">
+      <div id="localClock">--:--:--</div>
+      <div id="localDate">-- -- ----</div>
+    </div>
+  </header>
+
+  <!-- LOCATION BANNER -->
+  <div class="location-banner">
+    <div>
+      <h2 id="placeName">Loading location…</h2>
+      <span id="placeCoords">--</span>
+      <span id="placeTZ"></span>
+    </div>
+    <div class="refresh-info">
+      <span id="lastUpdated">Updating…</span>
+      <button id="refreshBtn"><span class="rbtn-icon">⟳</span> Refresh</button>
+      <label class="auto-toggle"><input type="checkbox" id="autoRefresh" checked> Auto-refresh (2 min)</label>
+    </div>
+  </div>
+
+  <!-- WEATHER WARNINGS -->
+  <div class="warnings-banner" id="warningsBanner">
+    <div class="warnings-head">
+      <h3><span class="warnings-head-icon">⚠️</span> Weather Warnings <span class="sub">Next 24 hours &amp; current conditions</span></h3>
+      <span id="warningsCount" class="warnings-count">Checking…</span>
+    </div>
+    <div id="warningsList" class="warnings-list"></div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- MAP PICKER -->
+    <section class="card map-card">
+      <h3>Pick a Location</h3>
+      <div id="map"></div>
+    </section>
+
+    <!-- CURRENT CONDITIONS -->
+    <section class="card hero-card">
+      <div class="hero-main">
+        <div class="hero-icon" id="weatherIcon">⛅</div>
+        <div class="hero-temp">
+          <span id="currentTemp">--°</span>
+          <span class="feels-like">Feels like <span id="feelsLike">--°</span></span>
+        </div>
+        <div class="hero-desc" id="weatherDesc">--</div>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-item"><span class="lbl">Humidity</span><span id="humidity" class="val">--%</span></div>
+        <div class="hero-item"><span class="lbl">Wind</span><span id="wind" class="val">-- km/h</span></div>
+        <div class="hero-item"><span class="lbl">Pressure</span><span id="pressure" class="val">-- hPa</span></div>
+        <div class="hero-item"><span class="lbl">Visibility</span><span id="visibility" class="val">-- km</span></div>
+        <div class="hero-item"><span class="lbl">Cloud Cover</span><span id="cloudCover" class="val">--%</span></div>
+        <div class="hero-item"><span class="lbl">Dew Point</span><span id="dewPoint" class="val">--°</span></div>
+        <div class="hero-item"><span class="lbl">Precipitation</span><span id="precip" class="val">-- mm</span></div>
+        <div class="hero-item"><span class="lbl">Wind Gust</span><span id="windGust" class="val">-- km/h</span></div>
+      </div>
+    </section>
+
+    <!-- AQI -->
+    <section class="card aqi-card">
+      <h3>Live Air Quality</h3>
+      <div class="aqi-main">
+        <div id="aqiGauge" class="aqi-gauge">
+          <span id="aqiValue">--</span>
+          <span id="aqiLabel">--</span>
+        </div>
+        <div class="aqi-sub">
+          <div>US AQI: <b id="aqiUS">--</b></div>
+          <div>EU AQI: <b id="aqiEU">--</b></div>
+        </div>
+      </div>
+      <div class="pollutant-grid">
+        <div class="pollutant"><span class="lbl">PM2.5</span><span id="pm25" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">PM10</span><span id="pm10" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">O₃</span><span id="o3" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">NO₂</span><span id="no2" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">SO₂</span><span id="so2" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">CO</span><span id="co" class="val">--</span></div>
+      </div>
+    </section>
+
+    <!-- UV INDEX -->
+    <section class="card uv-card">
+      <h3>UV Index</h3>
+      <div class="uv-main">
+        <div id="uvGauge" class="uv-gauge"><span id="uvValue">--</span></div>
+        <div id="uvLabel" class="uv-label">--</div>
+      </div>
+      <p id="uvAdvice" class="advice">--</p>
+    </section>
+
+    <!-- SUN -->
+    <section class="card sun-card">
+      <h3>Sun <span class="sub">Live countdown updates every second</span></h3>
+      <div class="sun-arc-wrap">
+        <svg id="sunArc" viewBox="0 0 200 110" class="sun-arc">
+          <path d="M10,100 A90,90 0 0,1 190,100" fill="none" stroke="#ffffff33" stroke-width="2"/>
+          <circle id="sunDot" cx="10" cy="100" r="6" fill="#FFD166"/>
+        </svg>
+      </div>
+      <div class="sun-live-badge" id="sunLiveBadge">
+        <span id="sunLiveIcon" class="sun-live-icon">☀️</span>
+        <div class="sun-live-text">
+          <span id="sunLiveStatus" class="sun-live-status">--</span>
+          <span id="sunLiveCountdown" class="sun-live-countdown">--:--:--</span>
+        </div>
+      </div>
+      <div class="sun-times">
+        <div><span class="lbl">Sunrise</span><span id="sunrise" class="val">--:--</span></div>
+        <div><span class="lbl">Sunset</span><span id="sunset" class="val">--:--</span></div>
+        <div><span class="lbl">Day Length</span><span id="dayLength" class="val">--</span></div>
+        <div><span class="lbl">Solar Noon</span><span id="solarNoon" class="val">--:--</span></div>
+      </div>
+    </section>
+
+    <!-- MOON -->
+    <section class="card moon-card">
+      <h3>Moon <span class="sub">Hover the moon to track its live position</span></h3>
+      <div class="moon-main">
+        <div class="moon-track-wrap">
+          <div id="moonVisual" class="moon-visual" tabindex="0"></div>
+          <div class="moon-tooltip" id="moonTooltip">
+            <div class="moon-tooltip-row"><span class="lbl">Altitude</span><span id="moonAlt" class="val">--°</span></div>
+            <div class="moon-tooltip-row"><span class="lbl">Azimuth</span><span id="moonAz" class="val">--°</span></div>
+            <div class="moon-tooltip-row"><span class="lbl">Direction</span><span id="moonDir" class="val">--</span></div>
+            <div class="moon-tooltip-row"><span class="lbl">Status</span><span id="moonStatus" class="val">--</span></div>
+          </div>
+        </div>
+        <div class="moon-info">
+          <div class="moon-phase-name" id="moonPhaseName">--</div>
+          <div><span class="lbl">Illumination</span><span id="moonIllum" class="val">--%</span></div>
+          <div><span class="lbl">Moonrise</span><span id="moonrise" class="val">--:--</span></div>
+          <div><span class="lbl">Moonset</span><span id="moonset" class="val">--:--</span></div>
+          <div><span class="lbl">Distance</span><span id="moonDistance" class="val">-- km</span></div>
+          <div><span class="lbl">Age</span><span id="moonAge" class="val">-- days</span></div>
+        </div>
+      </div>
+      <div class="moon-arc-wrap">
+        <svg id="moonArc" viewBox="0 0 200 110" class="moon-arc">
+          <path d="M10,100 A90,90 0 0,1 190,100" fill="none" stroke="#ffffff33" stroke-width="2"/>
+          <circle id="moonArcDot" cx="10" cy="100" r="5" fill="#dfe6f5"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- LIVE WIND + ACTIVE WEATHER WIDGET -->
+    <section class="card wind-card">
+      <h3>Live Wind &amp; Conditions</h3>
+      <div class="wind-widget">
+        <div class="wind-compass">
+          <canvas id="windFlowCanvas" class="wind-flow-canvas"></canvas>
+          <div class="compass-ring">
+            <span class="cdir cN">N</span><span class="cdir cE">E</span><span class="cdir cS">S</span><span class="cdir cW">W</span>
+            <div id="windArrow" class="wind-arrow">▲</div>
+            <div class="wind-speed-center">
+              <span id="windSpeedBig">--</span>
+              <span class="wind-unit">km/h</span>
+            </div>
+          </div>
+        </div>
+        <div class="wind-info">
+          <div class="active-weather-badge">
+            <span id="activeWxIcon" class="awx-icon">⛅</span>
+            <div>
+              <div id="activeWxDesc" class="awx-desc">--</div>
+              <div id="activeWxPlace" class="awx-place">--</div>
+            </div>
+          </div>
+          <div class="wind-stats">
+            <div><span class="lbl">Wind from</span><span id="windDirLabel" class="val">--</span></div>
+            <div><span class="lbl">Gusts</span><span id="windGustLabel" class="val">-- km/h</span></div>
+            <div><span class="lbl">Beaufort</span><span id="beaufort" class="val">--</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOURLY FORECAST -->
+    <section class="card hourly-card">
+      <h3>Hourly Forecast (24h)</h3>
+      <div id="hourlyChart" class="hourly-scroll"></div>
+    </section>
+
+    <!-- 7-DAY FORECAST -->
+    <section class="card daily-card">
+      <h3>7-Day Forecast</h3>
+      <div id="dailyForecast" class="daily-grid"></div>
+    </section>
+
+    <!-- NIGHT SKY -->
+    <section class="card sky-card">
+      <h3>Tonight's Sky <span class="sub">Constellations &amp; Planets Visible Nearby</span></h3>
+      <div class="sky-tabs" id="skyTabs">
+        <button class="sky-tab active" data-filter="all">All</button>
+        <button class="sky-tab" data-filter="constellation">✨ Constellations</button>
+        <button class="sky-tab" data-filter="planet">🪐 Planets</button>
+      </div>
+      <div class="sky-status" id="skyStatus">--</div>
+      <div class="milkyway-status" id="milkyWayStatus">
+        <span class="mw-icon">🌌</span>
+        <span id="milkyWayText" class="mw-text">Checking Milky Way visibility…</span>
+      </div>
+      <div id="skyObjects" class="sky-grid"></div>
+    </section>
+
+    <!-- AURORA -->
+    <section class="card aurora-card">
+      <h3>Aurora Forecast <span class="sub">Live geomagnetic activity &amp; visibility from your location</span></h3>
+      <div class="aurora-main">
+        <div id="auroraGauge" class="aurora-gauge">
+          <span id="auroraKp">--</span>
+          <span class="aurora-kp-lbl">Kp</span>
+        </div>
+        <div class="aurora-sub">
+          <div id="auroraActivity" class="aurora-activity">--</div>
+          <div id="auroraVerdict" class="aurora-verdict">--</div>
+        </div>
+      </div>
+      <p id="auroraAdvice" class="advice">Loading live data from NOAA Space Weather…</p>
+      <div class="aurora-oval-wrap">
+        <canvas id="auroraOvalCanvas" class="aurora-oval-canvas" width="220" height="220"></canvas>
+        <div class="aurora-oval-legend">
+          <span><i class="dot dot-oval"></i> Auroral oval (live boundary)</span>
+          <span><i class="dot dot-you"></i> Your location</span>
+        </div>
+      </div>
+      <div class="aurora-regions">
+        <div class="aurora-regions-label">Currently within range</div>
+        <div id="auroraRegionList" class="aurora-region-chips"></div>
+      </div>
+      <div class="aurora-meta">
+        <span id="auroraUpdated">--</span>
+      </div>
+    </section>
+
+    <!-- ADDITIONAL METRICS -->
+    <section class="card extra-card">
+      <h3>Additional Metrics</h3>
+      <div class="pollutant-grid">
+        <div class="pollutant"><span class="lbl">Elevation</span><span id="elevation" class="val">-- m</span></div>
+        <div class="pollutant"><span class="lbl">Snowfall</span><span id="snowfall" class="val">-- cm</span></div>
+        <div class="pollutant"><span class="lbl">Soil Temp</span><span id="soilTemp" class="val">--°</span></div>
+        <div class="pollutant"><span class="lbl">CAPE</span><span id="cape" class="val">--</span></div>
+        <div class="pollutant"><span class="lbl">Freezing Lvl</span><span id="freezeLvl" class="val">-- m</span></div>
+        <div class="pollutant"><span class="lbl">Pollen (Grass)</span><span id="pollen" class="val">--</span></div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    Data: Open-Meteo (weather, AQI, geocoding) · Astronomy: SunCalc &amp; Astronomy Engine · Built for live, location-aware exploration.
+  </footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/suncalc/suncalc.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine/astronomy.browser.js"></script>
+<script src="js/constellations.js"></script>
+<script src="js/weatherfx.js"></script>
+<script src="js/windwidget.js"></script>
+<script src="js/astronomy.js"></script>
+<script src="js/aurora.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/aqi.js"></script>
+<script src="js/warnings.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/map.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
